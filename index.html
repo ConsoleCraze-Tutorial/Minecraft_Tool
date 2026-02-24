@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Tool Suite</title>
+    <style>
+        :root {
+            --sidebar-bg: #2c3e50;
+            --main-bg: #1a1a1a;
+            --accent: #27ae60;
+            --text: white;
+        }
+
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: var(--main-bg); 
+            color: var(--text); 
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR WITH SMOOTH SLIDER --- */
+        #sidebar {
+            position: fixed;
+            left: 0; top: 0;
+            width: 280px; height: 100vh;
+            background: var(--sidebar-bg);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+            box-sizing: border-box;
+            border-right: 2px solid var(--accent);
+            z-index: 1000;
+        }
+
+        /* When this class is added, the sidebar hides */
+        #sidebar.hidden { transform: translateX(-100%); }
+
+        /* Floating Toggle Button sticking out */
+        #toggle-btn {
+            position: absolute;
+            right: -45px; top: 20px;
+            width: 45px; height: 45px;
+            background: var(--accent);
+            color: white; border: none;
+            cursor: pointer; border-radius: 0 5px 5px 0;
+            font-size: 20px; font-weight: bold;
+        }
+
+        /* --- MAIN CONTENT AREA (The Big Black Spot) --- */
+        #main-display {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+        }
+
+        /* Tool Containers in the middle */
+        .tool-box {
+            width: 100%;
+            max-width: 550px;
+            background: var(--sidebar-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            display: none; /* Hidden by default */
+            border: 1px solid #444;
+        }
+
+        .tool-box.active { display: block; }
+
+        /* UI Styling */
+        h2 { color: var(--accent); margin-top: 0; }
+        
+        .menu-item {
+            padding: 15px; background: #34495e; 
+            margin-bottom: 10px; border-radius: 6px; 
+            cursor: pointer; font-weight: bold; text-align: center;
+        }
+        .menu-item:hover { background: var(--accent); }
+
+        input { 
+            width: 100%; padding: 12px; margin: 8px 0; 
+            background: #1c2833; border: 1px solid #444; 
+            color: white; border-radius: 4px; box-sizing: border-box;
+        }
+
+        .calc-btn { 
+            width: 100%; padding: 15px; background: var(--accent); 
+            border: none; color: white; cursor: pointer; 
+            margin-top: 15px; font-weight: bold; border-radius: 4px;
+        }
+
+        #result { 
+            margin-top: 20px; padding: 15px; background: #1c2833; 
+            border-left: 4px solid var(--accent); font-family: monospace;
+            font-size: 1.1em; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar" class="hidden">
+    <button id="toggle-btn" onclick="toggleSidebar()">M</button>
+    <h2>Menu</h2>
+    <div class="menu-item" onclick="openTool('calc-view')">Stronghold Calculator</div>
+    <div class="menu-item" onclick="openTool('about-view')">About Us</div>
+</div>
+
+<div id="main-display">
+    
+    <div id="welcome-view" class="tool-box active">
+        <h2>Welcome</h2>
+        <p>Open the menu on the left and select a tool.</p>
+    </div>
+
+    <div id="calc-view" class="tool-box">
+        <h2>Calculator</h2>
+        <p><small>Throw 1</small></p>
+        <input type="number" id="x1" placeholder="X Coordinate">
+        <input type="number" id="z1" placeholder="Z Coordinate">
+        <input type="number" id="y1" placeholder="Yaw Angle">
+        <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
+        <p><small>Throw 2</small></p>
+        <input type="number" id="x2" placeholder="X Coordinate">
+        <input type="number" id="z2" placeholder="Z Coordinate">
+        <input type="number" id="y2" placeholder="Yaw Angle">
+        <button class="calc-btn" onclick="runCalculation()">Find Stronghold</button>
+        <div id="result" style="display:none"></div>
+    </div>
+
+    <div id="about-view" class="tool-box">
+        <h2>About Us</h2>
+        <p><strong>Server:</strong> paper.jar</p>
+        <p><strong>Port:</strong> 19132</p>
+        <p>Using triangulation math to find strongholds in Java Edition.</p>
+    </div>
+
+</div>
+
+<script>
+    // Toggle the sidebar sliding in/out
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('hidden');
+    }
+
+    // Switch content in the main black area
+    function openTool(toolId) {
+        var boxes = document.getElementsByClassName('tool-box');
+        for (var i = 0; i < boxes.length; i++) {
+            boxes[i].style.display = 'none';
+        }
+        document.getElementById(toolId).style.display = 'block';
+    }
+
+    // Triangulation Math
+    function runCalculation() {
+        var x1 = parseFloat(document.getElementById('x1').value);
+        var z1 = parseFloat(document.getElementById('z1').value);
+        var y1 = parseFloat(document.getElementById('y1').value);
+        var x2 = parseFloat(document.getElementById('x2').value);
+        var z2 = parseFloat(document.getElementById('z2').value);
+        var y2 = parseFloat(document.getElementById('y2').value);
+
+        if(isNaN(x1) || isNaN(x2)) return;
+
+        var r1 = (y1 + 90) * (Math.PI / 180);
+        var r2 = (y2 + 90) * (Math.PI / 180);
+        var m1 = Math.tan(r1);
+        var m2 = Math.tan(r2);
+        var c1 = z1 - m1 * x1;
+        var c2 = z2 - m2 * x2;
+        var fx = (c2 - c1) / (m1 - m2);
+        var fz = m1 * fx + c1;
+
+        var res = document.getElementById('result');
+        res.style.display = 'block';
+        res.innerHTML = "Stronghold Coords:<br>X: " + Math.round(fx) + " | Z: " + Math.round(fz);
+    }
+</script>
+
+</body>
+</html>
