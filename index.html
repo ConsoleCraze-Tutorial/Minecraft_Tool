@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Tool</title>
+    <title>Minecraft Tool Suite</title>
     <style>
         :root {
             --sidebar-bg: #2c3e50;
             --main-bg: #1a1a1a;
             --accent: #27ae60;
+            --secondary-accent: #7d3cff;
             --text: white;
         }
 
@@ -21,6 +22,7 @@
             overflow: hidden;
         }
 
+        /* --- SIDEBAR --- */
         #sidebar {
             position: fixed;
             left: 0; top: 0;
@@ -45,6 +47,7 @@
             font-size: 20px; font-weight: bold;
         }
 
+        /* --- MAIN CONTENT --- */
         #main-display {
             flex-grow: 1;
             display: flex;
@@ -89,9 +92,11 @@
             width: 100%; padding: 15px; background: var(--accent); 
             border: none; color: white; cursor: pointer; 
             margin-top: 15px; font-weight: bold; border-radius: 4px;
+            transition: opacity 0.2s;
         }
+        .calc-btn:hover { opacity: 0.9; }
 
-        #result { 
+        .result-area { 
             margin-top: 20px; padding: 15px; background: #1c2833; 
             border-left: 4px solid var(--accent); font-family: monospace;
             font-size: 1.1em; text-align: center;
@@ -104,6 +109,7 @@
     <button id="toggle-btn" onclick="toggleSidebar()">M</button>
     <h2>Menu</h2>
     <div class="menu-item" onclick="openTool('calc-view')">Stronghold Calculator</div>
+    <div class="menu-item" onclick="openTool('portal-view')">Nether Portal Linker</div>
     <div class="menu-item" onclick="openTool('coming-soon-view')">Coming Soon...</div>
     <div class="menu-item" onclick="openTool('about-view')">About Us</div>
 </div>
@@ -112,11 +118,11 @@
     
     <div id="welcome-view" class="tool-box active">
         <h2>Welcome</h2>
-        <p>Open the menu on the left and select a tool.</p>
+        <p>Open the menu on the left and select a tool to get started.</p>
     </div>
 
     <div id="calc-view" class="tool-box">
-        <h2>Calculator</h2>
+        <h2>Stronghold Finder</h2>
         <p><small>Throw 1</small></p>
         <input type="number" id="x1" placeholder="X Coordinate">
         <input type="number" id="z1" placeholder="Z Coordinate">
@@ -127,24 +133,47 @@
         <input type="number" id="z2" placeholder="Z Coordinate">
         <input type="number" id="y2" step="0.1" placeholder="Yaw Angle">
         <button class="calc-btn" onclick="runCalculation()">Find Stronghold</button>
-        <div id="result" style="display:none"></div>
+        <div id="result" class="result-area" style="display:none"></div>
+    </div>
+
+    <div id="portal-view" class="tool-box">
+        <h2>Nether Portal Linker</h2>
+        <p>Convert coordinates between dimensions (1:8 Ratio).</p>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button class="calc-btn" style="margin:0; flex:1;" onclick="setPortalMode('ow-to-n')">OW ➔ Nether</button>
+            <button class="calc-btn" style="margin:0; flex:1; background:var(--secondary-accent)" onclick="setPortalMode('n-to-ow')">Nether ➔ OW</button>
+        </div>
+
+        <div id="portal-inputs">
+            <label id="mode-label" style="font-weight:bold; color:var(--accent)">Overworld Coordinates:</label>
+            <input type="number" id="pX" placeholder="X Coordinate" oninput="calculatePortal()">
+            <input type="number" id="pZ" placeholder="Z Coordinate" oninput="calculatePortal()">
+        </div>
+
+        <div class="result-area">
+            <span id="target-label" style="color:var(--accent); font-size: 0.9em;">Nether Result:</span><br>
+            <strong id="portal-res" style="font-size: 1.2em;">X: 0 | Z: 0</strong>
+        </div>
     </div>
 
     <div id="coming-soon-view" class="tool-box">
         <h2>Coming Soon</h2>
         <p>We are working on adding more Minecraft utility tools here!</p>
-        <p><strong>Stay tuned for updates.</strong></p>
+        <p><strong>Planned:</strong> Circle generator, Villager price tracker, and more.</p>
     </div>
+
     <div id="about-view" class="tool-box">
-        <h2>About us</h2>
-        <p><strong>Youtube: </strong>https://youtube.com/@consolecrazetutorial</p>
+        <h2>About Us</h2>
+        <p><strong>Youtube: </strong><a href="https://youtube.com/@consolecrazetutorial" style="color:var(--accent)">@consolecrazetutorial</a></p>
         <p><strong>Discord: </strong>rip_consolecraze</p>
-        <p><strong>Join our Discord Server: </strong>https://discord.gg/mtzyE3ahBX</p>
+        <p><strong>Community: </strong><a href="https://discord.gg/mtzyE3ahBX" style="color:var(--accent)">Join our Discord Server</a></p>
     </div>
 
 </div>
 
 <script>
+    // --- UI Logic ---
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('hidden');
     }
@@ -159,10 +188,10 @@
         activeTool.style.display = 'block';
         activeTool.classList.add('active');
         
-        // Auto-close sidebar on mobile/small screens after selection
         if (window.innerWidth < 600) toggleSidebar();
     }
 
+    // --- Stronghold Finder Logic ---
     function runCalculation() {
         var x1 = parseFloat(document.getElementById('x1').value);
         var z1 = parseFloat(document.getElementById('z1').value);
@@ -176,22 +205,55 @@
             return;
         }
 
-        // Minecraft Yaw to Radians (Yaw is offset by 90 degrees in math terms)
         var r1 = (y1 + 90) * (Math.PI / 180);
         var r2 = (y2 + 90) * (Math.PI / 180);
-        
         var m1 = Math.tan(r1);
         var m2 = Math.tan(r2);
-        
         var c1 = z1 - m1 * x1;
         var c2 = z2 - m2 * x2;
-        
         var fx = (c2 - c1) / (m1 - m2);
         var fz = m1 * fx + c1;
 
         var res = document.getElementById('result');
         res.style.display = 'block';
         res.innerHTML = "Stronghold Coords:<br>X: " + Math.round(fx) + " | Z: " + Math.round(fz);
+    }
+
+    // --- Nether Portal Logic ---
+    let portalMode = 'ow-to-n';
+
+    function setPortalMode(mode) {
+        portalMode = mode;
+        const label = document.getElementById('mode-label');
+        const targetLabel = document.getElementById('target-label');
+        const resBox = document.querySelector('#portal-view .result-area');
+        
+        if(mode === 'ow-to-n') {
+            label.innerText = "Overworld Coordinates:";
+            targetLabel.innerText = "Nether Result:";
+            resBox.style.borderLeftColor = "var(--accent)";
+        } else {
+            label.innerText = "Nether Coordinates:";
+            targetLabel.innerText = "Overworld Result:";
+            resBox.style.borderLeftColor = "var(--secondary-accent)";
+        }
+        calculatePortal();
+    }
+
+    function calculatePortal() {
+        const x = parseFloat(document.getElementById('pX').value) || 0;
+        const z = parseFloat(document.getElementById('pZ').value) || 0;
+        let rx, rz;
+
+        if (portalMode === 'ow-to-n') {
+            rx = Math.floor(x / 8);
+            rz = Math.floor(z / 8);
+        } else {
+            rx = x * 8;
+            rz = z * 8;
+        }
+
+        document.getElementById('portal-res').innerHTML = `X: ${rx} | Z: ${rz}`;
     }
 </script>
 
